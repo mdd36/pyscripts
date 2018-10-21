@@ -1,3 +1,30 @@
+"""
+pull-all.py
+
+Utility to pull all submissions for ECE 350.
+
+Example usage to pull all pc1 submissions, if pc1 was due at 11:59:59 on September 11, 2018:
+
+    python path/to/pull-all.py 1 18-09-11
+
+The verbose flag (-v) will direct git command output to your terminal window, as well as give more detailed status
+messages during the program
+
+The new input flag (-i) should be followed by a path to a text file containing all github names for students in the
+class, on per line. If no -i flag is given, then the last set of github usernames is used, stored in it's own file away
+from the caller. An example flag and path is shown below:
+
+    -i ~/TA/350/github_name.txt
+
+The output flag (-o) will redirect output from the current director to the one specifed after the flag. By default, all
+projects are cloned into the cwd, so -o is normally desired. The directories will be made if they don't already exist.
+For example,
+
+    -o ~/TA/350/pc1
+
+will clone all projects into the folder ~/TA/350/pc1
+"""
+
 from subprocess import call, DEVNULL
 from sys import argv, stderr, stdout
 from os import path, getcwd, chdir, makedirs
