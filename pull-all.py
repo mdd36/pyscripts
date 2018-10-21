@@ -120,4 +120,5 @@ with open(last_netid_set_path, 'w+') as file:
     file.write('\n')
 
 
+
 print('Done, following students made no submission: {}'.format(', '.join(no_sub)))
