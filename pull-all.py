@@ -117,6 +117,7 @@ if verbose:
     print('Saving netid for next time...')
 with open(last_netid_set_path, 'w+') as file:
     file.writelines('\n'.join(names))
+    file.write('\n')
 
 
 print('Done, following students made no submission: {}'.format(', '.join(no_sub)))
