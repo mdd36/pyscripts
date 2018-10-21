@@ -4,7 +4,7 @@ from subprocess import call
 
 files = [name[:-3] for name in listdir('.') if name.endswith(".cc")]
 compilers = ["g++", "gcc"]
-build_command = "sudo {} -o  {}.o {}.cc {} ../libinterrupt.a -I. -Wall -lm -ldl -no-pie " \
+build_command = "sudo {} -o  {}.o {}.cc {} libinterrupt.a -I. -Wall -lm -ldl -no-pie " \
                 "-std=c++11 -g"
 error_msg = "Error: correct usage is\n\tbuild-all /thread/lib/path <g++/gcc>"
 

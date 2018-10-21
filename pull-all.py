@@ -5,11 +5,14 @@ from os import path, getcwd, chdir, makedirs
 # ----------------------- Globals -----------------------
 
 usage = """Usage error, should be
-    python pull-all <pc-number> <due-date like YY-MM-DD> [<-v> <-i /list/of/netids> <-o /export/path>]
-"""
+    python pull-all <pc-number> <due-date like YY-MM-DD> [<-v> <-i /list/of/netids> <-o /export/path>]"""
+
 last_netid_set_path = path.expanduser('~') + '/pyscripts/.dat/netids/last'
-pull_cmd = "git clone git@github.com:DukeECE350/{}-{}.git"  # pc number, github name
-rollback_cmd = "git checkout \'master@{{ {} 23:59:59 }}\'"
+pull_cmd = 'git clone git@github.com:DukeECE350/{}-{}.git'  # pc number, github name
+branch_clean = 'git branch -d grading'
+rollback_cmd = """git checkout `git rev-list -n 1 --before="{} 11:59" master`"""
+branch_cmd = 'git branch grading'
+checkout_cmd = 'git checkout grading'
 
 if not path.exists(path.expanduser('~') + '/pyscripts/.dat/netids'):
     makedirs(path.expanduser('~') + '/pyscripts/.dat/netids')
@@ -26,14 +29,14 @@ if len(argv) < 3 or not 0 <= int(argv[1]) <= 4:
     exit(1)
 
 pc_number = 'pc'+argv[1]
-rollback_cmd.format('20' + argv[2])
+rollback_cmd = rollback_cmd.format('20' + argv[2])
 
 verbose = '-v' in argv
 
+out = DEVNULL
+
 if verbose:
     out = open(stdout, 'w')
-else:
-    out = DEVNULL
 
 try:
     in_dex = argv.index('-i')
@@ -60,7 +63,7 @@ file.close()
 # ----------------------- Pull -----------------------
 
 print('Pulling and rolling back...')
-
+no_sub = []
 if not path.exists(output_dir):
     makedirs(output_dir)
 
@@ -72,9 +75,13 @@ for github_name in names:
     cmd = pull_cmd.format(pc_number, github_name)
     call(cmd.split('\\s+'), shell=True, stdout=out)
     if not path.exists('{}-{}'.format(pc_number, github_name)):
+        no_sub.append(github_name)
         continue
     chdir('{}-{}'.format(pc_number, github_name))
+    call(branch_clean, shell=True, stdout=out)
     call(rollback_cmd, shell=True, stdout=out)
+    call(branch_cmd, shell=True, stdout=out)
+    call(checkout_cmd, shell=True, stdout=out)
     chdir('..')
 
 # ----------------------- Save Dir for next time -----------------------
@@ -85,4 +92,4 @@ with open(last_netid_set_path, 'w+') as file:
     file.writelines('\n'.join(names))
 
 
-print('Done')
+print('Done, following students made no submission: {}'.format(', '.join(no_sub)))
