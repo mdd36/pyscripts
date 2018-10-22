@@ -2,4 +2,4 @@
 !.gitignore
 !*.py
 !.dat/*
-moss.py
+moss*.py
