@@ -37,7 +37,7 @@ usage = """Usage error, should be
 last_netid_set_path = path.expanduser('~') + '/pyscripts/.dat/netids/last'
 pull_cmd = 'git clone git@github.com:DukeECE350/{}-{}.git'  # pc number, github name
 branch_clean = 'git branch -d grading'
-rollback_cmd = """git checkout `git rev-list -n 1 --before="{} 11:59" master`"""
+rollback_cmd = """git checkout `git rev-list -n 1 --before="{} 23:59" master`"""
 branch_cmd = 'git branch grading'
 checkout_cmd = 'git checkout grading'
 
