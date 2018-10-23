@@ -7,18 +7,18 @@ import re
 
 # ------------------- Parse -------------------
 parser = argparse.ArgumentParser()
-parser.add_argument('-s', dest='syntax_location', default='', help='Syntax document, regex supported')
+parser.add_argument('-s', dest='syntax_location', required=True, help='Syntax document, regex supported')
 parser.add_argument('-i', dest='input_dir', default='.', help='Directory of submissions')
 parser.add_argument('-o', dest='out_file', default='./results', help='Result file location')
 parser.add_argument('-c', dest='example_count', type=int, default=100, help='Number of violations saved to output')
-parser.add_argument('-b', dest='base_files', nargs='*', default=[], help='Base file given to students')
+parser.add_argument('-b', dest='base_files', nargs='*', default=[], help='Base files to ignore')
 args = parser.parse_args()
 
 if not path.exists(args.input_dir):
     print('Specified input directory does not exist: {}'.format(args.input_dir), file=stderr)
     exit(1)
 
-syntax_file = path.abspath(args.syntax_location)  # Will change to in dir, so need abs path for later
+syntax_file = path.abspath(args.syntax_location)
 if not path.exists(syntax_file):
     print('Specified input syntax file does not exist: {}'.format(syntax_file), file=stderr)
     exit(1)
@@ -41,6 +41,7 @@ with open(syntax_file, 'r') as syntax_ref:
             illegal_syntax.add(re.compile('(?<!//)[\w\W]*'+line[:-1]))
 
 for_loop = re.compile('\s*(for)\s*(\([\w\W]*\))\s*(begin\s*:\s*[\w*]?)?\s*(/)*\s*[\S\s]*')
+module = re.compile('^\s*(module)')
 # ------------------- Search for illegal syntax -------------------
 
 print('Starting search for illegal syntax...')
@@ -64,7 +65,7 @@ for student in submissions:
                 if whitespace.match(line):
                     continue
                 for pattern in illegal_syntax:
-                    if pattern.search(line) and not for_loop.match(line):
+                    if pattern.search(line) and not (for_loop.match(line) or module.match(line)):
                         if violation_count[student] < args.example_count:
                             violations[student].append(path.basename(submitted_file) + " " + str(line_num+1) + ":\t"
                                                        + line.strip() + '\n')
