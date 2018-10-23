@@ -38,7 +38,7 @@ whitespace = re.compile('^\s*$')
 with open(syntax_file, 'r') as syntax_ref:
     for line in syntax_ref:
         if not whitespace.match(line):
-            illegal_syntax.add(re.compile('(:?!//)\s*'+line[:-1]))
+            illegal_syntax.add(re.compile('(?<!//)[\w\W]*'+line[:-1]))
 
 for_loop = re.compile('\s*(for)\s*(\([\w\W]*\))\s*(begin\s*:\s*[\w*]?)?\s*(/)*\s*[\S\s]*')
 # ------------------- Search for illegal syntax -------------------
@@ -47,7 +47,6 @@ print('Starting search for illegal syntax...')
 
 violations = defaultdict(list)
 violation_count = defaultdict(int)
-violation_condition = defaultdict(list)
 
 submissions = listdir(args.input_dir)
 for student in submissions:
@@ -61,12 +60,14 @@ for student in submissions:
             continue
         with open(submitted_file, 'r') as file:
             for line_num, line in enumerate(file):
+                line = line.split('//')[0]
+                if whitespace.match(line):
+                    continue
                 for pattern in illegal_syntax:
                     if pattern.search(line) and not for_loop.match(line):
                         if violation_count[student] < args.example_count:
                             violations[student].append(path.basename(submitted_file) + " " + str(line_num+1) + ":\t"
                                                        + line.strip() + '\n')
-                            violation_condition[student].append(pattern)
                         violation_count[student] += 1
 
 # ------------------- Write back results -------------------
