@@ -1,6 +1,6 @@
 import argparse
 from subprocess import call
-from os import path, chdir, makedirs, listdir, getcwd
+from os import path, chdir, makedirs, listdir
 from collections import defaultdict
 import re
 import datetime
@@ -15,6 +15,7 @@ map_ = defaultdict(list)
 base_contributors = []
 lookup = {}
 template = 'Student: {}\nTotal commits: {}\nCloned on: {}\nFirst Commit Date: {}\nLast Commit Date: {}\n' + '-' * 50 + '\n'
+template_clone_only = 'Student: {}\nTotal commits: 0\nCloned on:{}\n' + '-' * 50 + '\n'
 
 # ----------------------- Parse -----------------------
 
@@ -31,7 +32,7 @@ parser.add_argument('-e', '--email', dest='email_file', default='.email', help='
 parser.add_argument('-l', '--lookup', dest='lookup_table', default='.translate',
                     help='Translation table for GitHub names to student names as a JSON file '
                          'formatted like {GH name: Real name,...}. Defaults to .translate')
-parser.add_argument('assignment', nargs='+', help='One or more GitHub project names. Input folder names default to this')
+parser.add_argument('assignment', help='One or more GitHub project names. Input folder names default to this')
 # parser.add_argument('-f', '--figure', dest='figure_en', default=False, type=bool, help='Generate plot of commit '
 #                                                                                        'frequency and start date vs '
 #                                                                                        'grade')
@@ -55,7 +56,6 @@ grade_file = path.abspath(args.grades_file) if (args.grades_file and path.exists
 if path.exists(args.base_contributors) and path.isfile(args.base_contributors):
     with open(args.base_contributors, 'r') as contributors:
         base_contributors = [name[:-1] for name in contributors.readlines()]
-        print(base_contributors)
 
 if path.exists(args.lookup_table) and path.isfile(args.lookup_table):
     with open(args.lookup_table, 'r') as f:
@@ -69,15 +69,19 @@ assignment_re = re.compile(args.assignment)
 if args.email_file:
     subject_line_re = re.compile('^Subject:.+')
     date_line_re = re.compile('^Date:.+')
-    contributor = ''
+    contributor = None
     with open(args.email_file, 'r') as emails:
         for line in emails.readlines():
             if re.match(subject_line_re, line):
                 repo_name = line.split('/')[1].split(' ')[0]
                 if repo_name.startswith(args.assignment):
-                    GH_name = re.split(assignment_re, repo_name)[1]
-                    contributor = lookup[GH_name]
-            elif re.match(date_line_re, line):
+                    GH_name = re.split(assignment_re, repo_name)[1][1:]
+                    try:
+                        contributor = lookup[GH_name]
+                    except KeyError as e:
+                        print('Cannot find user', GH_name, 'specified in email')
+                        contributor = None
+            elif contributor and re.match(date_line_re, line):
                 date_str = ' '.join(line.split(' ')[1:4])
                 map_[contributor].append(datetime.datetime.strptime(date_str, '%B %d, %Y').date())
                 contributor = None
@@ -89,7 +93,11 @@ for submission_dir in listdir('.'):
     if (not path.isdir(submission_dir)) or submission_dir.startswith('.'):
         continue
     chdir(submission_dir)
-    name = lookup[re.split(assignment_re, submission_dir)[1]]
+    try:
+        name = lookup[re.split(assignment_re, submission_dir)[1][1:]]
+    except KeyError as e:
+        print('Cannot find user', re.split(assignment_re, submission_dir)[1][1:])
+        name = re.split(assignment_re, submission_dir)[1]
     call(shortlog_cmd.split('\\s+'), shell=True)
     with open(temp_file, 'r') as shortlog:
         for line in shortlog:
@@ -109,10 +117,13 @@ sb = []
 for contributor in map_.keys():
     commit_dates = map_[contributor]
     clone_date = commit_dates[0]
-    first_commit = commit_dates[-1]
-    last_commit = commit_dates[1]
     commit_counts = len(commit_dates)
-    sb.append(template.format(contributor, commit_counts, clone_date, first_commit, last_commit))
+    if commit_counts > 1:
+        first_commit = commit_dates[-1]
+        last_commit = commit_dates[1]
+        sb.append(template.format(contributor, commit_counts, clone_date, first_commit, last_commit))
+    else:
+        sb.append(template_clone_only.format(contributor, clone_date))
 
 with open(out_dir, 'w+') as out:
     out.writelines(sb)
