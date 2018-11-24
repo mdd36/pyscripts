@@ -42,7 +42,7 @@ args = parser.parse_args()
 input_dir = ''
 if args.input_dir is None:
     input_dir = args.assignment
-elif path.exists(args.input_dir) or path.isdir(args.input_dir):
+elif path.exists(args.input_dir) and path.isdir(args.input_dir):
     input_dir = args.input_dir
 else:
     raise ValueError('Input must be a directory and exist')
